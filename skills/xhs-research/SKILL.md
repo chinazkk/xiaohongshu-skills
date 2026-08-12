@@ -47,10 +47,18 @@ uv run python scripts/cli.py get-feed-detail --feed-id "<id>" --xsec-token "<tok
 5. Work in batches of at most three detail reads, pause, and decide whether new notes add a new decision signal. Do not use `--load-all-comments` by default.
 6. Record each opened note in `evidence.md`: title, direct URL, author posture, concise claim, source date, evidence grade, and limitation. Record only 2-4 anonymous comment themes for each high-signal thread.
 7. Seek disconfirming evidence. External sources are mandatory for volatile facts such as price, entry rules, weather, schedules, opening status, cancellation, and safety.
-8. Draft an actionable report with conclusion, alternatives, counterevidence, booking/decision rules, links, and a visible limitations section. Validate before delivery:
+8. Draft an actionable report with conclusion, alternatives, counterevidence, booking/decision rules, and a visible limitations section. **Every material claim must cite evidence IDs inline** (for example `【XHS-01】【XHS-C02】`), and `## 来源索引` must list the matching **clickable Markdown source links**. Do not make the reader open `evidence.md` just to discover the sources.
+9. Validate before delivery:
 
 ```bash
 python scripts/research_store.py validate --project "/absolute/vault/资料库/小红书调研/topic-slug" --deep
 ```
 
 Use `--deep` only when the project has 12 opened notes, comment coverage from 5 notes, and 8 comment themes. Otherwise disclose it as a targeted or initial sample.
+
+## Citation Standard
+
+- Use the exact evidence ID from `evidence.md`; do not invent citations.
+- Write short inline citations after the decision they support. Use direct source links in the source index, not search-results links.
+- One source-index entry may support several claims, but every source URL present in `evidence.md` must appear in `report.md`.
+- For a report with no completed evidence yet, keep the source index placeholder; `validate` intentionally fails until real links and citations are added.
