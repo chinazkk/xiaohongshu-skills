@@ -112,8 +112,28 @@ def _ensure_bridge_ready(bridge_url: str) -> None:
 
 
 def _open_chrome() -> None:
-    """尝试启动 Chrome 浏览器。"""
+    """尝试启动 Chrome 浏览器，优先复用研究专用持久化 profile。"""
     import subprocess
+
+    profile_dir = os.environ.get("XHS_RESEARCH_PROFILE")
+    extension_dir = os.environ.get("XHS_BRIDGE_EXTENSION_DIR")
+    debug_port = os.environ.get("XHS_RESEARCH_DEBUG_PORT", "9227")
+    if profile_dir:
+        args = [
+            "--user-data-dir=" + profile_dir,
+            "--remote-debugging-port=" + debug_port,
+            "--no-first-run",
+            "--no-default-browser-check",
+            "https://www.xiaohongshu.com/",
+        ]
+        if extension_dir and os.path.isdir(extension_dir):
+            args.insert(2, "--load-extension=" + extension_dir)
+        try:
+            subprocess.Popen(["open", "-na", "Google Chrome", "--args", *args])
+            return
+        except FileNotFoundError:
+            logger.warning("未能启动研究专用 Chrome，请手动运行 scripts/launch_research_browser.sh")
+            return
 
     candidates = [
         r"C:\Program Files\Google\Chrome\Application\chrome.exe",
