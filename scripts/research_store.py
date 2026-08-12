@@ -37,7 +37,7 @@ def init_project(root: Path, slug: str, title: str) -> Path:
     )
     (project / "evidence.md").write_text(EVIDENCE_HEADER, encoding="utf-8")
     (project / "report.md").write_text(
-        f"---\ntitle: {title}\ncreated: {today}\nupdated: {today}\ntags:\n  - 小红书调研\n研究类型: 主题研究\n主题: 待填写\n市场: 不适用\n主体: 待填写\n状态: 进行中\n资料等级: 混合\n下次复核日: 待填写\n---\n\n# {title}\n\n> [!abstract] 结论\n> 待基于证据台账填写。\n\n## 研究问题与样本\n\n## 核心发现\n\n## 决策建议\n\n## 反证与风险\n\n## 来源与证据边界\n",
+        f"---\ntitle: {title}\ncreated: {today}\nupdated: {today}\ntags:\n  - 小红书调研\n研究类型: 主题研究\n主题: 待填写\n市场: 不适用\n主体: 待填写\n状态: 进行中\n资料等级: 混合\n下次复核日: 待填写\n---\n\n# {title}\n\n> [!abstract] 结论\n> 待基于证据台账填写；完成后每项核心判断都应带 `【XHS-编号】`。\n\n## 研究问题与样本\n\n## 核心发现\n\n## 决策建议\n\n## 反证与风险\n\n## 来源索引\n\n- 待在完成证据采集后，按 `【XHS-编号】 [来源标题](https://...)` 列出所有来源。\n\n## 来源与证据边界\n",
         encoding="utf-8",
     )
     return project
@@ -51,11 +51,23 @@ def validate(project: Path, deep: bool) -> list[str]:
         return errors
     evidence = (project / "evidence.md").read_text(encoding="utf-8")
     report = (project / "report.md").read_text(encoding="utf-8")
-    if "| ID |" not in evidence or not re.search(r"https?://", evidence):
+    evidence_urls = set(re.findall(r"https?://[^)\s|]+", evidence))
+    evidence_ids = set(re.findall(r"^\|\s*(XHS-[A-Za-z0-9-]+)\s*\|", evidence, re.M))
+    report_urls = set(re.findall(r"https?://[^)\s|]+", report))
+    report_ids = set(re.findall(r"【(XHS-[A-Za-z0-9-]+)】", report))
+    if "| ID |" not in evidence or not evidence_urls:
         errors.append("evidence.md needs a table and at least one source URL")
-    for heading in ("## 反证与风险", "## 来源与证据边界"):
+    for heading in ("## 反证与风险", "## 来源索引", "## 来源与证据边界"):
         if heading not in report:
             errors.append(f"report.md is missing {heading}")
+    if evidence_ids and not report_ids:
+        errors.append("report.md needs inline evidence IDs such as 【XHS-01】")
+    unknown_ids = report_ids - evidence_ids
+    if unknown_ids:
+        errors.append(f"report.md cites IDs absent from evidence.md: {', '.join(sorted(unknown_ids))}")
+    missing_urls = evidence_urls - report_urls
+    if missing_urls:
+        errors.append(f"report.md source index is missing {len(missing_urls)} evidence URL(s)")
     if deep:
         notes = re.findall(r"^\|\s*XHS-(?!C)[A-Za-z0-9-]+\s*\|\s*笔记\s*\|", evidence, re.M)
         comment_urls = set(re.findall(r"^\|\s*XHS-C[A-Za-z0-9-]+\s*\|\s*评论概括\s*\|.*?\]\((https?://[^)]+)\)", evidence, re.M))
